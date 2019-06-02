@@ -1,0 +1,16 @@
+{
+    "name": "Cockpit-UserFlood",
+    "type": "project",
+    "description": "Cockpit Authentication Flood addon",
+    "authors": [
+        {
+            "name": "Paulo Gomes",
+            "email": "pauloamgomes@gmail.com"
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "Helper"
+        ]
+    }
+}
