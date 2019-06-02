@@ -8,18 +8,12 @@ At this phase the Addon functionality is very basic but functional, an user is s
 Installation can be performed with or without php composer (But keep in mind that after downloaded/extracted the addon must be named UserFlood).
 
 ### Without php composer
-1. Download zip and extract to 'your-cockpit-docroot/addons/UserFlood' (e.g. cockpitcms/addons/UserFlood)
-2. Install UserFlood dependency using composer
-```bash
-$ cd your-cockpit-docroot/addons/UserFlood
-$ composer install
-```
+Download zip and extract to 'your-cockpit-docroot/addons/UserFlood' (e.g. cockpitcms/addons/UserFlood)
 
 ### Using php composer
-1. Install addon using composer
 ```bash
 $ cd your-cockpit-docroot/addons
-$ composer create-project pauloamgomes/cockpit-cms-UserFlood UserFlood
+$ composer create-project pauloamgomes/cockpit-cms-userflood UserFlood
 ```
 
 ## Configuration
