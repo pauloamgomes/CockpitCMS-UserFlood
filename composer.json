@@ -1,11 +1,15 @@
 {
-    "name": "Cockpit-UserFlood",
+    "name": "pauloamgomes/cockpit-cms-userflood",
     "type": "project",
-    "description": "Cockpit Authentication Flood addon",
+    "description": "Cockpit CMS Authentication Flood addon",
+    "keywords": ["cms", "headless", "api", "cockpit", "security"],
+    "homepage": "https://github.com/pauloamgomes/cockpit-cms-kint",
+    "license": "MIT",
     "authors": [
         {
             "name": "Paulo Gomes",
-            "email": "pauloamgomes@gmail.com"
+            "email": "pauloamgomes@gmail.com",
+            "homepage": "https://www.pauloamgomes.net"
         }
     ],
     "autoload": {
