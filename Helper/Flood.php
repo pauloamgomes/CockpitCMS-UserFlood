@@ -1,6 +1,6 @@
 <?php
 
-namespace Cockpit\UserFlood;
+namespace UserFlood\Helper;
 
 class Flood extends \Lime\Helper {
 
@@ -15,7 +15,7 @@ class Flood extends \Lime\Helper {
   }
 
   public function add($user) {
-  	$settings = $this->app->retrieve('config/flood', ['errors' => 10]);
+    $settings = $this->app->retrieve('config/flood', ['errors' => 10]);
 
     $_user = $this->storage->findOne('cockpit/accounts', ['user' => $user]);
     if (!$_user || !$_user['active']) {
@@ -40,17 +40,17 @@ class Flood extends \Lime\Helper {
   }
 
   public function get($user = FALSE) {
-  	$options = [];
-  	if ($user) {
-  		$options['filter'] = ['user' => $user];
-  	}
+    $options = [];
+    if ($user) {
+      $options['filter'] = ['user' => $user];
+    }
     $entries = $this->storage->find('cockpit/flood', $options)->toArray();
 
     return $entries;
   }
 
   public function reset($user) {
-  	$this->app->trigger('flood.reset', [$user]);
+    $this->app->trigger('flood.reset', [$user]);
     $this->storage->remove('cockpit/flood', ['user' => $user]);
   }
 
@@ -63,14 +63,14 @@ class Flood extends \Lime\Helper {
    * Based on http://itman.in/en/how-to-get-client-ip-address-in-php/
    */
   protected function getIpAddress() {
-  	// check for shared internet/ISP IP
+    // check for shared internet/ISP IP
     if (!empty($_SERVER['HTTP_CLIENT_IP']) && $this->validateIp($_SERVER['HTTP_CLIENT_IP'])) {
       return $_SERVER['HTTP_CLIENT_IP'];
     }
 
-  	// check for IPs passing through proxies
+    // check for IPs passing through proxies
     if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-    	// check if multiple ips exist in var
+      // check if multiple ips exist in var
       if (strpos($_SERVER['HTTP_X_FORWARDED_FOR'], ',') !== FALSE) {
         $iplist = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
         foreach ($iplist as $ip) {

@@ -5,16 +5,44 @@ At this phase the Addon functionality is very basic but functional, an user is s
 
 ## Installation
 
-Installation can be performed with or without php composer (But keep in mind that after downloaded/extracted the addon must be named UserFlood).
+### Manual
 
-### Without php composer
-Download zip and extract to 'your-cockpit-docroot/addons/UserFlood' (e.g. cockpitcms/addons/UserFlood)
+Download [latest release](https://github.com/pauloamgomes/CockpitCMS-UserFlood) and extract to `COCKPIT_PATH/addons/UserFlood` directory
 
-### Using php composer
-```bash
-$ cd your-cockpit-docroot/addons
-$ composer create-project pauloamgomes/cockpit-cms-userflood UserFlood
+### Git
+
+```sh
+git clone https://github.com/pauloamgomes/CockpitCMS-UserFlood.git ./addons/UserFlood
 ```
+
+### Cockpit CLI
+
+```sh
+php ./cp install/addon --name UserFlood --url https://github.com/pauloamgomes/CockpitCMS-UserFlood.git
+```
+
+### Composer
+
+1. Make sure path to cockpit addons is defined in your projects' _composer.json_ file:
+
+  ```json
+  {
+      "name": "MY_PROJECT",
+      "extra": {
+          "installer-paths": {
+              "cockpit/addons/{$name}": ["type:cockpit-module"]
+          }
+      }
+  }
+  ```
+
+2. In your project root run:
+
+  ```sh
+  composer require pauloamgomes/cockpitcms-userflood
+  ```
+
+---
 
 ## Configuration
 
@@ -50,5 +78,3 @@ The UserFlood Addon provides the following events that can be handled by other A
 ## Copyright and license
 
 Copyright 2018 pauloamgomes under the MIT license.
-
-

@@ -1,8 +1,16 @@
 <?php
+/**
+ * Cockpit user flood addon
+ *
+ * @author  Paulo Gomes
+ * @package CockpitCMS-UserFlood
+ * @license MIT
+ *
+ * @source  https://github.com/pauloamgomes/CockpitCMS-UserFlood
+ * @see     { README.md } for usage info.
+ */
 
-require __DIR__ . '/vendor/autoload.php';
-
-$this->helpers['flood'] = 'Cockpit\\UserFlood\\Flood';
+$this->helpers['flood'] = 'UserFlood\\Helper\\Flood';
 
 $this->on('cockpit.authentication.failed', function($user = FALSE) use ($app) {
   $app->helper('flood')->add($user);
