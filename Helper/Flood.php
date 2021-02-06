@@ -1,61 +1,118 @@
 <?php
 
-namespace Cockpit\UserFlood;
+namespace UserFlood\Helper;
 
 class Flood extends \Lime\Helper {
 
   protected $storage;
+  protected $settings;
 
   public function initialize() {
-    $this->storage = $this->app->storage;
+    $this->storage  = $this->app->storage;
+    $this->settings = array_merge([
+      'errors'  => 4,    // max. allowed retries before lockout
+      'lockout' => 20,   // minutes lockout
+      'block'   => 4,    // deactivate user after 4 consecutive lockouts
+      'failban' => true, // auto-blacklist malicious users based on ip behavior
+    ], $this->app->retrieve('flood', []));
   }
 
-  public function count($user) {
-    return $this->storage->count('cockpit/flood', ['user' => $user]);
-  }
-
+  // add flood entry
   public function add($user) {
-  	$settings = $this->app->retrieve('config/flood', ['errors' => 10]);
-
-    $_user = $this->storage->findOne('cockpit/accounts', ['user' => $user]);
-    if (!$_user || !$_user['active']) {
-      return;
-    }
-
-    $entry = [
-      'user' => $user,
-      'ipaddress' => $this->getIpAddress(),
-      'timestamp' => time(),
-    ];
-
-    $this->app->trigger('flood.insert', [$user, &$entry]);
-    $this->storage->insert('cockpit/flood', $entry);
-    $count = $this->count($user);
-
-    if ($count >= $settings['errors']) {
-      $_user['active'] = FALSE;
-      $this->storage->save('cockpit/accounts', $_user);
-      $this->app->trigger('flood.block', [$user]);
+    if (!empty($user)) {
+      $settings = $this->settings;
+      $entry    = [
+        'user'      => $user,
+        'ipaddress' => $this->getIpAddress(),
+        'timestamp' => time()
+      ];
+      $this->app->trigger('flood.insert', [$user, &$entry, &$settings]);
+      $this->storage->insert('flood/log', $entry);
     }
   }
 
-  public function get($user = FALSE) {
-  	$options = [];
-  	if ($user) {
-  		$options['filter'] = ['user' => $user];
-  	}
-    $entries = $this->storage->find('cockpit/flood', $options)->toArray();
+  // count user flood entries
+  public function count($user, $options = []) {
+    if ($user) {
+      $options['user'] = $user;
+    }
+    return $this->storage->count('flood/log', $options);
+  }
+
+  // retrieve flood history
+  public function get($user = FALSE, $options = []) {
+    if ($user) {
+      $options['filter'] = ['user' => $user];
+    }
+    $entries = $this->storage->find('flood/log', $options)->toArray();
 
     return $entries;
   }
 
-  public function reset($user) {
-  	$this->app->trigger('flood.reset', [$user]);
-    $this->storage->remove('cockpit/flood', ['user' => $user]);
+  // set "lockout" field to account
+  public function lock($_user, $lockStartTime = NULL) {
+    $_user['lockout'] = $lockStartTime ?? time();
+    $this->storage->save('cockpit/accounts', $_user);
+    $this->app->trigger('flood.lockout', [$_user['user']]);
   }
 
+  // unset "lockout" field from locked account
+  public function unlock($_user) {
+    if (!empty($_user['lockout'])) {
+      unset($_user['lockout']);
+      $this->storage->save('cockpit/accounts', $_user);
+    }
+  }
+
+  // de-activate account to prevent Brute Force attacks
+  public function block($_user) {
+    $_user['active'] = FALSE;
+    $this->app->trigger('flood.block', [$_user['user']]);
+    $this->storage->save('cockpit/accounts', $_user);
+  }
+
+  // blacklist user by IP
+  public function blacklist($ip) {
+    $user = ['ip' => $ip];
+    $this->app->trigger('flood.blacklist', [$user]);
+    $this->storage->save('flood/blacklist', $user);
+  }
+
+  // whitelist user by IP
+  public function whitelist($ip) {
+    $user = ['ip' => $ip];
+    $this->app->trigger('flood.whitelist', [$user]);
+    $this->storage->save('flood/whitelist', $user);
+  }
+
+  // retrieve user failed login info [ errors, lockouts, blocks ]
+  public function info($entry, $settings = []) {
+    $settings      = $settings ?? $this->settings;
+    $user          = $entry['user'];
+    $lockStartTime = $entry['timestamp'] - ($settings['lockout'] * 60);
+    $ip            = $entry['ipaddress'] ?? $this->getIpAddress();
+    $ip_occurences = intval($this->count(false, [ 'ipaddress' => $entry['ipaddress'] ])) + 1;
+    $malicious_ip  = ($same_ip >= $settings['errors']) || $this->isTrustedIp($ip);
+    $errors        = intval($this->count($user, [ 'timestamp' => ['$gte' => $lockStartTime ] ])) + 1;
+    $lockouts      = intval($errors / $settings['errors']);
+    $blocks        = intval(($this->count($user) + 1) / $settings['errors']);
+    return compact('errors', 'lockouts', 'blocks', 'malicious_ip', 'ip_occurences', 'ip');
+  }
+
+  public function isTrustedIp($ip = NULL) {
+    $ip = $ip ?? $this->getIpAddress();
+    return $this->storage->count('flood/whitelist', ['ip' => $ip]) || !$this->storage->count('flood/blacklist', ['ip' => $ip]);
+  }
+
+  // flush user flood history
+  public function reset($user) {
+    $this->app->trigger('flood.reset', [$user]);
+    $this->storage->remove('flood/log', ['user' => $user]);
+  }
+
+  // flush flood history
   public function resetAll($id) {
-    return $this->storage->remove('cockpit/flood', []);
+    return $this->storage->remove('flood/log', []);
   }
 
   /**
@@ -63,14 +120,14 @@ class Flood extends \Lime\Helper {
    * Based on http://itman.in/en/how-to-get-client-ip-address-in-php/
    */
   protected function getIpAddress() {
-  	// check for shared internet/ISP IP
+    // check for shared internet/ISP IP
     if (!empty($_SERVER['HTTP_CLIENT_IP']) && $this->validateIp($_SERVER['HTTP_CLIENT_IP'])) {
       return $_SERVER['HTTP_CLIENT_IP'];
     }
 
-  	// check for IPs passing through proxies
+    // check for IPs passing through proxies
     if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-    	// check if multiple ips exist in var
+      // check if multiple ips exist in var
       if (strpos($_SERVER['HTTP_X_FORWARDED_FOR'], ',') !== FALSE) {
         $iplist = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
         foreach ($iplist as $ip) {
