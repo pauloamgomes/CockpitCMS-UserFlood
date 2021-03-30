@@ -1,7 +1,6 @@
 # Cockpit CMS UserFlood Addon
 
 This addon extends Cockpit CMS (Next) core by providing a very simple feature of locking users after a configurable number of failed login attempts.
-At this phase the Addon functionality is very basic but functional, an user is set to inactive (blocked) after x number of failed login attempts.
 
 ## Installation
 
@@ -46,13 +45,19 @@ php ./cp install/addon --name UserFlood --url https://github.com/pauloamgomes/Co
 
 ## Configuration
 
-If no configuration is provided a default of 10 login failures is used.
 The number of failed attempts can be configured as below:
 
 ```yaml
 flood:
-  errors: 5
+  errors:  4    # max. allowed retries before lockout
+  lockout: 20   # minutes lockout
+  block:   4    # deactivate user after 4 consecutive lockouts
+  failban: true # auto-blacklist malicious users based on ip behavior
 ```
+
+If no configuration is provided a default of 4 login failures is used.
+An `user` is set to inactive (blocked) after 16 consecutive failed login attempts (tot. 4 lockouts).
+The `failban` option automatically blacklist user's IP related to max number of allowed `errors`.
 
 ## Usage
 
